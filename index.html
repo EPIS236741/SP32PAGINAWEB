@@ -32,6 +32,7 @@
     body {
       font-family: 'Manrope', system-ui, sans-serif;
       background:
+        radial-gradient(circle at 50% 15%, rgba(255,255,255,0) 0%, transparent 55%),
         radial-gradient(circle at 30% 0%, #1a1a1d 0%, var(--bg) 55%);
       color: var(--text);
       min-height: 100vh;
@@ -39,6 +40,13 @@
       justify-content: center;
       align-items: center;
       padding: 24px;
+      transition: background 1.4s ease;
+    }
+
+    body.lit {
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255,183,77,0.38) 0%, rgba(255,150,50,0.14) 28%, transparent 58%),
+        radial-gradient(circle at 30% 0%, #211c14 0%, #0b0906 55%);
     }
 
     .card {
@@ -419,10 +427,12 @@
         ring.className = 'status-bulb on';
         txt.className = 'status-text on';
         txt.textContent = 'Encendido';
+        document.body.classList.add('lit');
       } else {
         ring.className = 'status-bulb';
         txt.className = 'status-text off';
         txt.textContent = 'Apagado';
+        document.body.classList.remove('lit');
       }
 
       document.getElementById('ldrValue').textContent = estado.ldr;
@@ -473,9 +483,11 @@
       if (on) {
         btnOn.classList.add('active');
         btnOff.classList.remove('active');
+        document.body.classList.add('lit');
       } else {
         btnOff.classList.add('active');
         btnOn.classList.remove('active');
+        document.body.classList.remove('lit');
       }
 
       if (btn) {
