@@ -3,358 +3,347 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 - Control Remoto</title>
+  <title>Relé — mi_rele_001</title>
 
   <!-- MQTT.js via CDN (cliente MQTT para navegadores) -->
-  <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --bg: #0b0b0c;
+      --card: #17171a;
+      --surface: #1f1f23;
+      --border: #2c2c30;
+      --text: #f3f3f1;
+      --text-muted: #8b8b90;
+      --red: #e0342d;
+      --red-dim: #3a1616;
+      --red-glow: rgba(224,52,45,0.35);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      font-family: 'Manrope', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 30% 0%, #1a1a1d 0%, var(--bg) 55%);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #e0e0e0;
-      padding: 20px;
+      padding: 24px;
     }
 
-    .container {
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 24px;
-      padding: 36px 30px;
-      max-width: 430px;
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      max-width: 390px;
       width: 100%;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      padding: 32px 30px;
+      box-shadow: 0 30px 60px -25px rgba(0,0,0,0.8);
     }
 
-    h1 { text-align: center; font-size: 1.55rem; margin-bottom: 6px; color: #fff; }
-    .subtitle { text-align: center; font-size: 0.82rem; color: #aaa; margin-bottom: 28px; }
-
-    /* ── Indicador de relé grande ── */
-    .rele-indicator {
-      width: 110px; height: 110px;
-      border-radius: 50%;
-      margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.8rem;
-      transition: all 0.5s ease;
-      position: relative;
-    }
-
-    .rele-indicator.on {
-      background: radial-gradient(circle, rgba(76,175,80,0.3), rgba(76,175,80,0.05));
-      box-shadow: 0 0 40px rgba(76,175,80,0.3), 0 0 80px rgba(76,175,80,0.1);
-    }
-
-    .rele-indicator.off {
-      background: radial-gradient(circle, rgba(244,67,54,0.2), rgba(244,67,54,0.03));
-      box-shadow: 0 0 30px rgba(244,67,54,0.15);
-    }
-
-    .rele-text {
-      text-align: center;
-      font-weight: 800;
-      font-size: 1.1rem;
-      margin-bottom: 24px;
-      transition: color 0.3s;
-    }
-
-    .rele-text.on  { color: #66bb6a; }
-    .rele-text.off { color: #ef5350; }
-
-    /* ── Status card ── */
-    .status-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin-bottom: 22px;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .status-row {
+    .top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 0;
+      margin-bottom: 26px;
     }
 
-    .status-label { font-size: 0.88rem; color: #bbb; }
+    h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 
-    .badge {
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 4px 14px;
+    .device-id {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 20px;
+      padding: 4px 10px;
     }
 
-    .badge-auto   { background: rgba(124,77,255,0.2); color: #b39ddb; }
-    .badge-manual { background: rgba(255,167,38,0.2); color: #ffa726; }
-
-    /* ── LDR ── */
-    .ldr-section {
-      text-align: center;
-      margin: 14px 0 6px;
+    /* ── Estado ── */
+    .status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 20px;
     }
 
-    .ldr-value {
-      font-size: 2.4rem;
+    .status-ring {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .status-ring.on {
+      border-color: var(--red);
+      background: var(--red);
+      box-shadow: 0 0 0 5px var(--red-glow);
+    }
+
+    .status-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .status-text.on  { color: var(--text); }
+    .status-text.off { color: var(--text-muted); }
+
+    /* ── Bloque de datos ── */
+    .data-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .row-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+    .row-value {
+      font-size: 2.1rem;
       font-weight: 800;
-      color: #fdd835;
-      line-height: 1;
-    }
-
-    .ldr-sub {
-      font-size: 0.75rem;
-      color: #888;
-      margin-top: 4px;
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
 
     .ldr-bar-wrap {
       width: 100%;
-      height: 10px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 5px;
-      margin-top: 12px;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
       position: relative;
-      overflow: visible;
+      margin-bottom: 4px;
     }
 
     .ldr-bar {
       height: 100%;
-      background: linear-gradient(90deg, #f44336, #ff9800, #fdd835, #66bb6a);
-      border-radius: 5px;
+      background: var(--red);
+      border-radius: 3px;
       transition: width 0.5s ease;
     }
 
     .umbral-line {
       position: absolute;
-      top: -6px;
-      width: 3px;
-      height: 22px;
-      background: #ff5252;
-      border-radius: 2px;
+      top: -5px;
+      width: 2px;
+      height: 15px;
+      background: var(--text);
+      border-radius: 1px;
       transition: left 0.3s;
-      z-index: 2;
     }
 
-    .umbral-line::after {
-      content: 'Umbral';
-      position: absolute;
-      top: -18px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.6rem;
-      color: #ff8a80;
-      white-space: nowrap;
+    .mode-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
     }
+    .mode-badge.manual { color: var(--red); border-color: rgba(224,52,45,0.4); }
 
-    /* ── Modo ── */
+    /* ── Selector de modo ── */
     .mode-selector {
       display: flex;
-      background: rgba(255,255,255,0.05);
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 20px;
-      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 18px;
     }
 
     .mode-btn {
       flex: 1;
-      padding: 14px 0;
+      padding: 11px 0;
       text-align: center;
       cursor: pointer;
+      font-family: inherit;
       font-weight: 600;
-      font-size: 0.93rem;
-      transition: all 0.3s;
+      font-size: 0.82rem;
       border: none;
+      border-radius: 8px;
       background: transparent;
-      color: #777;
+      color: var(--text-muted);
+      transition: all 0.2s;
     }
 
     .mode-btn.active {
-      background: linear-gradient(135deg, #7c4dff, #536dfe);
+      background: var(--red);
       color: #fff;
-      box-shadow: 0 4px 18px rgba(124,77,255,0.35);
     }
 
-    .mode-btn:hover:not(.active) { background: rgba(255,255,255,0.04); color: #bbb; }
+    .mode-btn:hover:not(.active) { color: var(--text); }
 
-    /* ── Botones relé ── */
+    /* ── Controles manuales ── */
     .manual-controls {
       display: flex;
-      gap: 12px;
-      margin-bottom: 22px;
-      transition: all 0.35s;
+      gap: 10px;
+      margin-bottom: 20px;
+      transition: opacity 0.3s;
     }
 
     .manual-controls.disabled {
-      opacity: 0.2;
+      opacity: 0.3;
       pointer-events: none;
-      transform: scale(0.96);
-      filter: grayscale(0.5);
     }
 
     .ctrl-btn {
       flex: 1;
-      padding: 16px;
-      border: none;
-      border-radius: 14px;
-      font-size: 0.95rem;
+      padding: 13px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      transition: all 0.15s;
     }
 
     .btn-on {
-      background: linear-gradient(135deg, #2e7d32, #43a047);
+      background: var(--red);
+      border: 1px solid var(--red);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(46,125,50,0.35);
     }
-    .btn-on:hover  { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(46,125,50,0.5); }
-    .btn-on:active { transform: translateY(0); }
+    .btn-on:hover { background: #c92b25; }
 
     .btn-off {
-      background: linear-gradient(135deg, #c62828, #e53935);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(198,40,40,0.35);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
     }
-    .btn-off:hover  { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(198,40,40,0.5); }
-    .btn-off:active { transform: translateY(0); }
+    .btn-off:hover { border-color: var(--text-muted); }
 
-    /* ── Umbral slider ── */
-    .threshold-section {
-      background: rgba(255,255,255,0.04);
-      border-radius: 14px;
-      padding: 16px 18px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-
+    /* ── Umbral ── */
     .threshold-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
       margin-bottom: 10px;
     }
 
-    .threshold-title { font-size: 0.88rem; color: #bbb; }
-    .threshold-val   { font-weight: 700; color: #7c4dff; font-size: 1.05rem; }
+    .threshold-title { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+    .threshold-val { font-size: 0.9rem; font-weight: 700; color: var(--red); }
 
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
       outline: none;
+      margin-bottom: 4px;
     }
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 22px; height: 22px;
-      background: linear-gradient(135deg, #7c4dff, #536dfe);
+      width: 16px; height: 16px;
+      background: var(--red);
       border-radius: 50%;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(124,77,255,0.45);
+      box-shadow: 0 0 0 4px var(--red-glow);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px;
+      background: var(--red);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
     }
 
-    .info-box {
-      margin-top: 12px;
-      padding: 10px 14px;
-      background: rgba(124,77,255,0.06);
-      border-radius: 10px;
+    .hint {
       font-size: 0.76rem;
-      color: #b39ddb;
-      line-height: 1.55;
+      color: var(--text-muted);
+      margin-top: 12px;
+      line-height: 1.6;
     }
 
-    /* ── Footer ── */
+    /* ── Conexión ── */
     .conn-bar {
       display: flex;
-      justify-content: center;
       align-items: center;
       gap: 8px;
-      margin-top: 20px;
-      font-size: 0.75rem;
-      color: #666;
+      margin-top: 22px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
     }
 
     .dot {
-      width: 8px; height: 8px;
+      width: 7px; height: 7px;
       border-radius: 50%;
+      background: var(--text-muted);
     }
+    .dot.ok   { background: #4caf6e; }
+    .dot.err  { background: var(--red); }
+    .dot.wait { background: var(--text-muted); animation: blink 1s infinite; }
 
-    .dot.ok   { background: #66bb6a; box-shadow: 0 0 8px #66bb6a; }
-    .dot.err  { background: #ef5350; box-shadow: 0 0 8px #ef5350; }
-    .dot.wait { background: #ffa726; box-shadow: 0 0 8px #ffa726; animation: blink 1s infinite; }
-
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>⚡ Control de Relé</h1>
-    <p class="subtitle">ESP32 + LDR · Control Remoto via MQTT</p>
+  <div class="card">
+    <div class="top">
+      <h1>Control de luz</h1>
+    </div>
 
-    <!-- Indicador grande -->
-    <div class="rele-indicator off" id="releCircle">💡</div>
-    <div class="rele-text off" id="releText">APAGADO</div>
+    <div class="status-wrap">
+      <span class="status-ring" id="releCircle"></span>
+      <span class="status-text off" id="releText">Apagado</span>
+    </div>
 
-    <!-- Estado -->
-    <div class="status-card">
-      <div class="status-row">
-        <span class="status-label">⚙️ Modo activo</span>
-        <span class="badge badge-auto" id="modoBadge">AUTOMÁTICO</span>
+    <div class="data-card">
+      <div class="row">
+        <span class="row-label">Sensor de luz (LDR)</span>
+        <span class="mode-badge" id="modoBadge">Automático</span>
       </div>
-      <div class="ldr-section">
-        <div class="ldr-value" id="ldrValue">---</div>
-        <div class="ldr-sub">Sensor de luz LDR (0 – 4095)</div>
-      </div>
-      <div class="ldr-bar-wrap">
+      <div class="row-value" id="ldrValue">—</div>
+      <div class="ldr-bar-wrap" style="margin-top:10px;">
         <div class="ldr-bar" id="ldrBar" style="width:0%"></div>
         <div class="umbral-line" id="umbralLine" style="left:36.6%"></div>
       </div>
     </div>
 
-    <!-- Selector de modo -->
     <div class="mode-selector">
-      <button class="mode-btn active" id="btnAuto" onclick="enviarModo('auto')">
-        🤖 Automático
-      </button>
-      <button class="mode-btn" id="btnManual" onclick="enviarModo('manual')">
-        🖐️ Manual
-      </button>
+      <button class="mode-btn active" id="btnAuto" onclick="enviarModo('auto')">Automático</button>
+      <button class="mode-btn" id="btnManual" onclick="enviarModo('manual')">Manual</button>
     </div>
 
-    <!-- Controles manuales -->
     <div class="manual-controls disabled" id="manualControls">
-      <button class="ctrl-btn btn-on"  onclick="enviarRele(true)">💡 Encender</button>
-      <button class="ctrl-btn btn-off" onclick="enviarRele(false)">🔴 Apagar</button>
+      <button class="ctrl-btn btn-on"  onclick="enviarRele(true)">Encender</button>
+      <button class="ctrl-btn btn-off" onclick="enviarRele(false)">Apagar</button>
     </div>
 
-    <!-- Umbral -->
-    <div class="threshold-section">
-      <div class="threshold-header">
-        <span class="threshold-title">🎚️ Umbral de luz</span>
-        <span class="threshold-val" id="umbralDisplay">1500</span>
-      </div>
-      <input type="range" id="umbralSlider" min="0" max="4095" value="1500"
-             oninput="umbralUI(this.value)"
-             onchange="enviarUmbral(this.value)">
-      <div class="info-box">
-        <strong>Automático:</strong> LDR &lt; umbral → poca luz → relé <strong>ON</strong>.
-        &ensp; LDR &gt; umbral → luz detectada → relé <strong>OFF</strong>.
-      </div>
+    <div class="threshold-header">
+      <span class="threshold-title">Umbral de luz</span>
+      <span class="threshold-val" id="umbralDisplay">1500</span>
     </div>
+    <input type="range" id="umbralSlider" min="0" max="4095" value="1500"
+           oninput="umbralUI(this.value)"
+           onchange="enviarUmbral(this.value)">
+    <p class="hint">Menos luz que el umbral → relé se enciende. Más luz → se apaga.</p>
 
     <div class="conn-bar">
       <div class="dot wait" id="dot"></div>
@@ -370,14 +359,10 @@
     const DEVICE_ID = 'mi_rele_001';
     // =========================================================
 
-    // Tópicos MQTT (deben coincidir con el ESP32)
     const TOPIC_ESTADO = `esp32/${DEVICE_ID}/estado`;
     const TOPIC_CMD    = `esp32/${DEVICE_ID}/cmd`;
-
-    // Broker MQTT público (WebSocket seguro para navegadores)
     const BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
 
-    // ── Conexión MQTT ──────────────────────────────────────
     const clientId = 'WEB_' + DEVICE_ID + '_' + Math.random().toString(16).slice(2, 8);
 
     const client = mqtt.connect(BROKER_URL, {
@@ -387,18 +372,11 @@
       reconnectPeriod: 3000,
     });
 
-    // Estado local
     let estado = { ldr: 0, rele: false, auto: true, umbral: 1500 };
 
-    // ── Eventos MQTT ───────────────────────────────────────
     client.on('connect', () => {
-      console.log('✅ Conectado a MQTT broker');
       setConn('ok', 'Conectado al broker MQTT');
-
-      // Suscribirse al estado del ESP32
-      client.subscribe(TOPIC_ESTADO, { qos: 0 }, (err) => {
-        if (!err) console.log('Suscrito a:', TOPIC_ESTADO);
-      });
+      client.subscribe(TOPIC_ESTADO, { qos: 0 });
     });
 
     client.on('reconnect', () => setConn('wait', 'Reconectando…'));
@@ -416,54 +394,48 @@
       }
     });
 
-    // ── Actualizar interfaz ────────────────────────────────
     function actualizarUI() {
-      // Relé
-      const circle = document.getElementById('releCircle');
-      const txt    = document.getElementById('releText');
+      const ring = document.getElementById('releCircle');
+      const txt  = document.getElementById('releText');
       if (estado.rele) {
-        circle.className = 'rele-indicator on';
-        txt.className = 'rele-text on';
-        txt.textContent = 'ENCENDIDO';
+        ring.className = 'status-ring on';
+        txt.className = 'status-text on';
+        txt.textContent = 'Encendido';
       } else {
-        circle.className = 'rele-indicator off';
-        txt.className = 'rele-text off';
-        txt.textContent = 'APAGADO';
+        ring.className = 'status-ring';
+        txt.className = 'status-text off';
+        txt.textContent = 'Apagado';
       }
 
-      // LDR
       document.getElementById('ldrValue').textContent = estado.ldr;
       document.getElementById('ldrBar').style.width = (estado.ldr / 4095 * 100) + '%';
 
-      // Modo
       const badge = document.getElementById('modoBadge');
       if (estado.auto) {
-        badge.textContent = 'AUTOMÁTICO';
-        badge.className = 'badge badge-auto';
+        badge.textContent = 'Automático';
+        badge.className = 'mode-badge';
         document.getElementById('btnAuto').classList.add('active');
         document.getElementById('btnManual').classList.remove('active');
         document.getElementById('manualControls').classList.add('disabled');
       } else {
-        badge.textContent = 'MANUAL';
-        badge.className = 'badge badge-manual';
+        badge.textContent = 'Manual';
+        badge.className = 'mode-badge manual';
         document.getElementById('btnAuto').classList.remove('active');
         document.getElementById('btnManual').classList.add('active');
         document.getElementById('manualControls').classList.remove('disabled');
       }
 
-      // Umbral
       document.getElementById('umbralSlider').value = estado.umbral;
       document.getElementById('umbralDisplay').textContent = estado.umbral;
       document.getElementById('umbralLine').style.left = (estado.umbral / 4095 * 100) + '%';
     }
 
-    // ── Enviar comandos ────────────────────────────────────
     function enviarCmd(obj) {
       client.publish(TOPIC_CMD, JSON.stringify(obj), { qos: 0 });
     }
 
-    function enviarModo(modo)    { enviarCmd({ modo }); }
-    function enviarRele(on)      { enviarCmd({ rele: on }); }
+    function enviarModo(modo) { enviarCmd({ modo }); }
+    function enviarRele(on)   { enviarCmd({ rele: on }); }
 
     let umbralTimer = null;
     function enviarUmbral(val) {
@@ -476,7 +448,6 @@
       document.getElementById('umbralLine').style.left = (val / 4095 * 100) + '%';
     }
 
-    // ── Indicador de conexión ──────────────────────────────
     function setConn(type, text) {
       document.getElementById('dot').className = 'dot ' + type;
       document.getElementById('connLabel').textContent = text;
