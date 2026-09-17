@@ -125,7 +125,7 @@
 
     @media (min-width: 1024px) {
       .card { max-width: 460px; padding: 40px 38px; }
-      h1 { font-size: 1.3rem; }
+      h1 { font-size: 2.5rem; }
       .status-bulb { font-size: 1.7rem; }
       .status-text { font-size: 1.45rem; }
       .row-value { font-size: 2.4rem; }
@@ -135,14 +135,12 @@
     .card {
       position: relative;
       z-index: 1;
-      background: rgba(255,255,255,0.018);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      border: 1px solid rgba(255,255,255,0.045);
-      border-radius: 18px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
       max-width: 390px;
       width: 100%;
-      padding: 32px 30px;
+      padding: 12px 6px;
     }
 
     .top {
@@ -152,7 +150,7 @@
       margin-bottom: 26px;
     }
 
-    h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+    h1 { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; }
 
     .device-id {
       font-size: 0.72rem;
