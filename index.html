@@ -23,6 +23,8 @@
       --red: #e0342d;
       --red-dim: #3a1616;
       --red-glow: rgba(224,52,45,0.35);
+      --green: #2ea043;
+      --green-glow: rgba(46,160,67,0.35);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -221,22 +223,42 @@
       font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
     }
 
     .btn-on {
-      background: var(--red);
-      border: 1px solid var(--red);
-      color: #fff;
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
     }
-    .btn-on:hover { background: #c92b25; }
+    .btn-on:hover { background: rgba(46,160,67,0.1); }
+    .btn-on:active,
+    .btn-on.pressed {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 0 0 6px var(--green-glow);
+      animation: pressPulse 0.35s ease;
+    }
 
     .btn-off {
       background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
+      border: 1px solid var(--red);
+      color: var(--red);
     }
-    .btn-off:hover { border-color: var(--text-muted); }
+    .btn-off:hover { background: rgba(224,52,45,0.1); }
+    .btn-off:active,
+    .btn-off.pressed {
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 0 0 6px var(--red-glow);
+      animation: pressPulse 0.35s ease;
+    }
+
+    @keyframes pressPulse {
+      0%   { transform: scale(0.95); }
+      55%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
 
     /* ── Umbral ── */
     .threshold-header {
@@ -306,7 +328,7 @@
 <body>
   <div class="card">
     <div class="top">
-      <h1>Control de luz</h1>
+      <h1>Control de Luz</h1>
     </div>
 
     <div class="status-wrap">
@@ -332,8 +354,8 @@
     </div>
 
     <div class="manual-controls disabled" id="manualControls">
-      <button class="ctrl-btn btn-on"  onclick="enviarRele(true)">Encender</button>
-      <button class="ctrl-btn btn-off" onclick="enviarRele(false)">Apagar</button>
+      <button class="ctrl-btn btn-on"  onclick="enviarRele(true, this)">Encender</button>
+      <button class="ctrl-btn btn-off" onclick="enviarRele(false, this)">Apagar</button>
     </div>
 
     <div class="threshold-header">
@@ -435,7 +457,13 @@
     }
 
     function enviarModo(modo) { enviarCmd({ modo }); }
-    function enviarRele(on)   { enviarCmd({ rele: on }); }
+    function enviarRele(on, btn) {
+      enviarCmd({ rele: on });
+      if (btn) {
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 350);
+      }
+    }
 
     let umbralTimer = null;
     function enviarUmbral(val) {
