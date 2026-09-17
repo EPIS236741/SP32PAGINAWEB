@@ -31,25 +31,110 @@
 
     body {
       font-family: 'Manrope', system-ui, sans-serif;
-      background:
-        radial-gradient(circle at 50% 15%, rgba(255,255,255,0) 0%, transparent 55%),
-        radial-gradient(circle at 30% 0%, #1a1a1d 0%, var(--bg) 55%);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 24px;
-      transition: background 1.4s ease;
+      position: relative;
+      overflow-x: hidden;
+      transition: background-color 1.4s ease;
     }
 
-    body.lit {
-      background:
-        radial-gradient(circle at 50% 10%, rgba(255,183,77,0.38) 0%, rgba(255,150,50,0.14) 28%, transparent 58%),
-        radial-gradient(circle at 30% 0%, #211c14 0%, #0b0906 55%);
+    body.lit { background-color: #0d0906; }
+
+    /* ── Capa de fondo animada ── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: absolute;
+      top: -18%;
+      left: 50%;
+      transform: translateX(-50%) scale(1);
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,183,77,0.38) 0%, rgba(255,150,50,0.13) 32%, transparent 65%);
+      opacity: 0;
+      transition: opacity 1.6s ease;
+    }
+
+    body.lit .bg-glow {
+      opacity: 1;
+      animation: breathe 4.5s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50%      { transform: translateX(-50%) scale(1.09); }
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -4vh;
+      border-radius: 50%;
+      background: rgba(150,150,155,0.45);
+      animation-name: drift;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      opacity: 0;
+    }
+
+    body.lit .particle {
+      background: rgba(255,205,130,0.9);
+      box-shadow: 0 0 6px rgba(255,183,77,0.7);
+    }
+
+    @keyframes drift {
+      0%   { transform: translateY(0) translateX(0); opacity: 0; }
+      10%  { opacity: 0.7; }
+      88%  { opacity: 0.55; }
+      100% { transform: translateY(-112vh) translateX(var(--drift-x, 20px)); opacity: 0; }
+    }
+
+    /* ── Luna decorativa: mismo mecanismo que el foco (grises apagado / brillo encendido) ── */
+    .moon {
+      position: absolute;
+      top: 8%;
+      right: 9%;
+      font-size: 150px;
+      line-height: 1;
+      user-select: none;
+      filter: grayscale(1) brightness(0.5);
+      opacity: 0.45;
+      transition: filter 1.4s ease, opacity 1.4s ease, text-shadow 1.4s ease;
+    }
+
+    body.lit .moon {
+      filter: grayscale(0) brightness(1.05);
+      opacity: 0.9;
+      text-shadow: 0 0 60px rgba(255,183,77,0.55);
+    }
+
+    @media (max-width: 900px) {
+      .moon { display: none; }
+    }
+
+    @media (min-width: 1024px) {
+      .card { max-width: 460px; padding: 40px 38px; }
+      h1 { font-size: 1.3rem; }
+      .status-bulb { font-size: 1.7rem; }
+      .status-text { font-size: 1.45rem; }
+      .row-value { font-size: 2.4rem; }
+      .bg-glow { width: 1100px; height: 1100px; }
     }
 
     .card {
+      position: relative;
+      z-index: 1;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -330,6 +415,12 @@
   </style>
 </head>
 <body>
+  <div class="bg-layer">
+    <div class="bg-glow"></div>
+    <div class="moon">🌙</div>
+    <div id="particles"></div>
+  </div>
+
   <div class="card">
     <div class="top">
       <h1>Control de Luz</h1>
@@ -511,6 +602,25 @@
       document.getElementById('dot').className = 'dot ' + type;
       document.getElementById('connLabel').textContent = text;
     }
+
+    // ── Partículas ambientales de fondo ─────────────────────
+    (function crearParticulas() {
+      const cont = document.getElementById('particles');
+      const total = 26;
+      for (let i = 0; i < total; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 4 + 2;
+        const duration = Math.random() * 9 + 9;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = duration + 's';
+        p.style.animationDelay = (-Math.random() * duration) + 's';
+        p.style.setProperty('--drift-x', (Math.random() * 70 - 35) + 'px');
+        cont.appendChild(p);
+      }
+    })();
   </script>
 </body>
 </html>
