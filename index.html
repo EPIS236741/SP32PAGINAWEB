@@ -82,19 +82,17 @@
       margin-bottom: 20px;
     }
 
-    .status-ring {
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      border: 2px solid var(--text-muted);
-      background: transparent;
+    .status-bulb {
+      font-size: 1.4rem;
+      line-height: 1;
       flex-shrink: 0;
-      transition: all 0.3s ease;
+      filter: grayscale(1) brightness(0.55);
+      transition: filter 0.35s ease, text-shadow 0.35s ease;
     }
 
-    .status-ring.on {
-      border-color: var(--red);
-      background: var(--red);
-      box-shadow: 0 0 0 5px var(--red-glow);
+    .status-bulb.on {
+      filter: grayscale(0) brightness(1.15);
+      text-shadow: 0 0 14px rgba(255, 200, 60, 0.65);
     }
 
     .status-text {
@@ -232,13 +230,12 @@
       color: var(--green);
     }
     .btn-on:hover { background: rgba(46,160,67,0.1); }
-    .btn-on:active,
-    .btn-on.pressed {
+    .btn-on.active {
       background: var(--green);
       color: #fff;
-      box-shadow: 0 0 0 6px var(--green-glow);
-      animation: pressPulse 0.35s ease;
+      box-shadow: 0 0 0 4px var(--green-glow);
     }
+    .btn-on.pressed { animation: pressPulse 0.35s ease; }
 
     .btn-off {
       background: transparent;
@@ -246,13 +243,12 @@
       color: var(--red);
     }
     .btn-off:hover { background: rgba(224,52,45,0.1); }
-    .btn-off:active,
-    .btn-off.pressed {
+    .btn-off.active {
       background: var(--red);
       color: #fff;
-      box-shadow: 0 0 0 6px var(--red-glow);
-      animation: pressPulse 0.35s ease;
+      box-shadow: 0 0 0 4px var(--red-glow);
     }
+    .btn-off.pressed { animation: pressPulse 0.35s ease; }
 
     @keyframes pressPulse {
       0%   { transform: scale(0.95); }
@@ -332,7 +328,7 @@
     </div>
 
     <div class="status-wrap">
-      <span class="status-ring" id="releCircle"></span>
+      <span class="status-bulb" id="releCircle">💡</span>
       <span class="status-text off" id="releText">Apagado</span>
     </div>
 
@@ -354,8 +350,8 @@
     </div>
 
     <div class="manual-controls disabled" id="manualControls">
-      <button class="ctrl-btn btn-on"  onclick="enviarRele(true, this)">Encender</button>
-      <button class="ctrl-btn btn-off" onclick="enviarRele(false, this)">Apagar</button>
+      <button class="ctrl-btn btn-on"  id="btnEncender" onclick="enviarRele(true, this)">Encender</button>
+      <button class="ctrl-btn btn-off" id="btnApagar" onclick="enviarRele(false, this)">Apagar</button>
     </div>
 
     <div class="threshold-header">
@@ -420,11 +416,11 @@
       const ring = document.getElementById('releCircle');
       const txt  = document.getElementById('releText');
       if (estado.rele) {
-        ring.className = 'status-ring on';
+        ring.className = 'status-bulb on';
         txt.className = 'status-text on';
         txt.textContent = 'Encendido';
       } else {
-        ring.className = 'status-ring';
+        ring.className = 'status-bulb';
         txt.className = 'status-text off';
         txt.textContent = 'Apagado';
       }
@@ -450,6 +446,17 @@
       document.getElementById('umbralSlider').value = estado.umbral;
       document.getElementById('umbralDisplay').textContent = estado.umbral;
       document.getElementById('umbralLine').style.left = (estado.umbral / 4095 * 100) + '%';
+
+      // Color persistente de los botones según el estado real del relé
+      const btnOn  = document.getElementById('btnEncender');
+      const btnOff = document.getElementById('btnApagar');
+      if (estado.rele) {
+        btnOn.classList.add('active');
+        btnOff.classList.remove('active');
+      } else {
+        btnOff.classList.add('active');
+        btnOn.classList.remove('active');
+      }
     }
 
     function enviarCmd(obj) {
@@ -459,6 +466,18 @@
     function enviarModo(modo) { enviarCmd({ modo }); }
     function enviarRele(on, btn) {
       enviarCmd({ rele: on });
+
+      // Actualización optimista: fija el color de inmediato sin esperar la confirmación MQTT
+      const btnOn  = document.getElementById('btnEncender');
+      const btnOff = document.getElementById('btnApagar');
+      if (on) {
+        btnOn.classList.add('active');
+        btnOff.classList.remove('active');
+      } else {
+        btnOff.classList.add('active');
+        btnOn.classList.remove('active');
+      }
+
       if (btn) {
         btn.classList.add('pressed');
         setTimeout(() => btn.classList.remove('pressed'), 350);
